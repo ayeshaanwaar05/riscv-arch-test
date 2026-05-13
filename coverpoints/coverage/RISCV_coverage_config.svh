@@ -158,6 +158,9 @@
 `ifdef SSCOUNTERENW_COVERAGE
   `include "Sscounterenw_coverage.svh"
 `endif
+`ifdef SSSTATEEN_COVERAGE
+  `include "Ssstateen_coverage.svh"
+`endif
 `ifdef SSSTRICTS_COVERAGE
   `include "SsstrictS_coverage.svh"
 `endif

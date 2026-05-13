@@ -206,6 +206,10 @@
         `cover_info("//      Sscounterenw - Enabled");
         `include "Sscounterenw_coverage_init.svh"
     `endif
+    `ifdef COVER_SSSTATEEN
+        `cover_info("//      Ssstateen - Enabled");
+        `include "Ssstateen_coverage_init.svh"
+    `endif
     `ifdef COVER_SSSTRICTS
         `cover_info("//      SsstrictS - Enabled");
         `include "SsstrictS_coverage_init.svh"
