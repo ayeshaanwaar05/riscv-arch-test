@@ -182,14 +182,13 @@
 //   4. Otherwise       -> RESERVED        (return -1)
 //==============================================================================
 
-// a0 values for TSBI_GOTO_xMODE.  ALT_GOTO_MODE is used by RVTEST_GOTO_DELEGATED_MMODE
-#define ALT_GOTO_MMODE      0x00000000
-#define TSBI_GOTO_MMODE     0x00000001
-#define TSBI_GOTO_SMODE     0x00000002
-#define TSBI_GOTO_UMODE     0x00000003
-#define TSBI_GOTO_VSMODE    0x00000004
-#define TSBI_GOTO_VUMODE    0x00000005
-#define TSBI_ECALL_TEST     0x00000073
+#define ALT_GOTO_MMODE      0x00000000           // a0 value: Used by RVTEST_GOTO_DELEGATED_MMODE
+#define TSBI_GOTO_MMODE     0x00000001           // a0 value: switch to Machine mode
+#define TSBI_GOTO_SMODE     0x00000002           // a0 value: switch to Supervisor (or HS) mode
+#define TSBI_GOTO_UMODE     0x00000003           // a0 value: switch to User mode
+#define TSBI_GOTO_VSMODE    0x00000004           // a0 value: switch to Virtual Supervisor mode (requires H)
+#define TSBI_GOTO_VUMODE    0x00000005           // a0 value: switch to Virtual User mode (requires H)
+#define TSBI_ECALL_TEST     0x00000073           // a0 value: test ecall trap path, returns xEPC in a0
 
 // CSR_ACCESS is not a single #define — it's any value where:
 //   bits[6:0]   == 0x73 (SYSTEM opcode)    AND
@@ -1717,8 +1716,8 @@ tsbi_instr_not_found:
 tsbi_instr_table:
 
         TSBI_CSR_INSTR_TABLE(0x300) // mstatus
-        //TSBI_CSR_INSTR_TABLE(0x302) // medeleg - shouldn't be changed below M-mode.
-        //TSBI_CSR_INSTR_TABLE(0x303) // mideleg - shouldn't be changed below M-mode.
+        //TSBI_CSR_INSTR_TABLE(0x302) // medeleg  // TODO: This might need to record the intended delegation state for delegating in software when bits are read-only zero
+        //TSBI_CSR_INSTR_TABLE(0x303) // mideleg  // TODO: This might need to record the intended delegation state for delegating in software when bits are read-only zero
         TSBI_CSR_INSTR_TABLE(0x304) // mie
         //TSBI_CSR_INSTR_TABLE(0x305) // mtvec
         TSBI_CSR_INSTR_TABLE(0x306) // mcounteren
@@ -1747,6 +1746,67 @@ tsbi_instr_table:
         TSBI_CSR_INSTR_TABLE(0x7AA) // mscontext
         TSBI_CSR_INSTR_TABLE(0x5A8) // scontext
         TSBI_CSR_INSTR_TABLE(0x6A8) // hcontext
+        TSBI_CSR_INSTR_TABLE(0xB03) // mhpmcounter3
+        TSBI_CSR_INSTR_TABLE(0xDA0) // scountovf
+        // Sscofpmf performance-monitoring CSRs
+        TSBI_CSR_INSTR_TABLE(0x323) // mhpmevent3
+        TSBI_CSR_INSTR_TABLE(0x324) // mhpmevent4
+        TSBI_CSR_INSTR_TABLE(0x325) // mhpmevent5
+        TSBI_CSR_INSTR_TABLE(0x326) // mhpmevent6
+        TSBI_CSR_INSTR_TABLE(0x327) // mhpmevent7
+        TSBI_CSR_INSTR_TABLE(0x328) // mhpmevent8
+        TSBI_CSR_INSTR_TABLE(0x329) // mhpmevent9
+        TSBI_CSR_INSTR_TABLE(0x32A) // mhpmevent10
+        TSBI_CSR_INSTR_TABLE(0x32B) // mhpmevent11
+        TSBI_CSR_INSTR_TABLE(0x32C) // mhpmevent12
+        TSBI_CSR_INSTR_TABLE(0x32D) // mhpmevent13
+        TSBI_CSR_INSTR_TABLE(0x32E) // mhpmevent14
+        TSBI_CSR_INSTR_TABLE(0x32F) // mhpmevent15
+        TSBI_CSR_INSTR_TABLE(0x330) // mhpmevent16
+        TSBI_CSR_INSTR_TABLE(0x331) // mhpmevent17
+        TSBI_CSR_INSTR_TABLE(0x332) // mhpmevent18
+        TSBI_CSR_INSTR_TABLE(0x333) // mhpmevent19
+        TSBI_CSR_INSTR_TABLE(0x334) // mhpmevent20
+        TSBI_CSR_INSTR_TABLE(0x335) // mhpmevent21
+        TSBI_CSR_INSTR_TABLE(0x336) // mhpmevent22
+        TSBI_CSR_INSTR_TABLE(0x337) // mhpmevent23
+        TSBI_CSR_INSTR_TABLE(0x338) // mhpmevent24
+        TSBI_CSR_INSTR_TABLE(0x339) // mhpmevent25
+        TSBI_CSR_INSTR_TABLE(0x33A) // mhpmevent26
+        TSBI_CSR_INSTR_TABLE(0x33B) // mhpmevent27
+        TSBI_CSR_INSTR_TABLE(0x33C) // mhpmevent28
+        TSBI_CSR_INSTR_TABLE(0x33D) // mhpmevent29
+        TSBI_CSR_INSTR_TABLE(0x33E) // mhpmevent30
+        TSBI_CSR_INSTR_TABLE(0x33F) // mhpmevent31
+        TSBI_CSR_INSTR_TABLE(0x723) // mhpmevent3h  (RV32)
+        TSBI_CSR_INSTR_TABLE(0x724) // mhpmevent4h  (RV32)
+        TSBI_CSR_INSTR_TABLE(0x725) // mhpmevent5h  (RV32)
+        TSBI_CSR_INSTR_TABLE(0x726) // mhpmevent6h  (RV32)
+        TSBI_CSR_INSTR_TABLE(0x727) // mhpmevent7h  (RV32)
+        TSBI_CSR_INSTR_TABLE(0x728) // mhpmevent8h  (RV32)
+        TSBI_CSR_INSTR_TABLE(0x729) // mhpmevent9h  (RV32)
+        TSBI_CSR_INSTR_TABLE(0x72A) // mhpmevent10h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x72B) // mhpmevent11h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x72C) // mhpmevent12h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x72D) // mhpmevent13h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x72E) // mhpmevent14h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x72F) // mhpmevent15h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x730) // mhpmevent16h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x731) // mhpmevent17h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x732) // mhpmevent18h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x733) // mhpmevent19h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x734) // mhpmevent20h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x735) // mhpmevent21h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x736) // mhpmevent22h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x737) // mhpmevent23h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x738) // mhpmevent24h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x739) // mhpmevent25h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x73A) // mhpmevent26h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x73B) // mhpmevent27h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x73C) // mhpmevent28h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x73D) // mhpmevent29h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x73E) // mhpmevent30h (RV32)
+        TSBI_CSR_INSTR_TABLE(0x73F) // mhpmevent31h (RV32)
         // loads and stores (these must not fault; the recursive trap handler may not save registers correctly)
         lw a0, 0(a1)
         ret
@@ -2291,8 +2351,14 @@ clrint_\__MODE__\()tbl:
   #endif
 #endif
 
+.set causeidx, 0xC
  .rept NUM_SPECD_INTCAUSES-0xC
-        .dword  1                                    // causes 12..23: reserved -> default return
+   .if causeidx == 13
+        .dword  \__MODE__\()clr_Lcofi_int             // cause 13: LCOFI (Sscofpmf) -> real clear routine
+   .else
+        .dword  1                                    // other reserved causes: default return
+   .endif
+   .set causeidx, causeidx+1
  .endr
  .rept UDB_MXLEN-NUM_SPECD_INTCAUSES
         .dword  0                       // impossible, quit test by jumping to  epilogs
@@ -2404,6 +2470,16 @@ excpt_\__MODE__\()hndlr_tbl:
         beq T1, T3, 1f
         RVMODEL_CLR_SEXT_INT(T2, T5)
     1:
+        la      T2, resto_\__MODE__\()rtn
+        jr      T2
+\__MODE__\()clr_Lcofi_int:                           // Local counter-overflow interrupt (Sscofpmf), cause 13
+        .ifc \__MODE__ , M
+            li T2, (1<<13)
+            csrc mip, T2                              // M-mode: mip is accessible directly
+        .else
+            li T2, (1<<13)
+            csrc sip, T2                               // S/H/V-mode: must clear via sip (mip is M-only)
+        .endif
         la      T2, resto_\__MODE__\()rtn
         jr      T2
 
@@ -2611,22 +2687,6 @@ trap_handler_fastillegalinstr:
         csrr a1, mcause                 // read trap cause
         xori a1, a1, 2                  // a1 = 0 iff cause == 2 (illegal instruction)
         bnez a1, fast_Mothertrap        // not illegal — restore regs and use regular handler
-        // Only traps taken in the test body may use the fast path. It signature-updates
-        // through x2, which RVTEST_INIT_REGS does not load until the end of boot, so a
-        // trap taken earlier — e.g. a boot-time CSR write that the reference model does
-        // not implement — would write through an uninitialized register. Forward those to
-        // the standard handler, which works off mscratch and records nothing in the
-        // signature (so the reference model taking such a trap does not diverge from a DUT
-        // that does not). Ask whether xEPC is in the test code segment rather than
-        // inferring it from x2's contents. This compares unrelocated addresses, which is
-        // already the fast path's assumption: RVTEST_SIGUPD_FAST_TRAP writes through x2 raw.
-        SREG a2, rvmodel_sv_off+3*REGWIDTH(a0)  // stash caller's a2 (rvmodel_sv slot 3 is free)
-        csrr a1, mepc
-        LREG a2, code_bgn_off(a0)       // a2 = rvtest_code_begin
-        sub  a1, a1, a2                 // a1 = mepc - code_begin (wraps if mepc is below it)
-        LREG a2, code_seg_siz(a0)       // a2 = code segment size
-        bgeu a1, a2, fast_Mbootrap      // outside the test code — use the standard handler
-        LREG a2, rvmodel_sv_off+3*REGWIDTH(a0)  // restore caller's a2
         LREG a1, rvmodel_sv_off+2*REGWIDTH(a0)  // restore caller's a1
         csrrw a0, CSR_MSCRATCH, a0      // restore mscratch = save ptr; a0 = caller's a0
 fast_Millegalinstruction:
@@ -2652,8 +2712,6 @@ fast_Mdone:
         csrw mepc, a0
         mret
 
-fast_Mbootrap:
-        LREG a2, rvmodel_sv_off+3*REGWIDTH(a0)  // restore caller's a2, then fall through
 fast_Mothertrap:
         LREG a1, rvmodel_sv_off+2*REGWIDTH(a0)  // restore caller's a1
         csrrw a0, CSR_MSCRATCH, a0      // restore mscratch = save ptr; a0 = caller's a0
@@ -2686,16 +2744,6 @@ strap_handler_fastillegalinstr:
         bnez a1, fast_Sothertrap        // not illegal — restore regs and use the S framework handler
                                         // (NOT fast_Mothertrap: the M trampoline's mscratch access
                                         // is itself illegal from S-mode and creates a trap loop)
-        // Same test-body check as the M handler: only traps taken in the test code segment
-        // may use the fast path, because it signature-updates through x2, which is not
-        // loaded until the end of boot. See the M handler for the full rationale.
-        SREG a2, rvmodel_sv_off+3*REGWIDTH(a0)  // stash caller's a2 (rvmodel_sv slot 3 is free)
-        csrr a1, sepc
-        LREG a2, code_bgn_off(a0)       // a2 = rvtest_code_begin
-        sub  a1, a1, a2                 // a1 = sepc - code_begin (wraps if sepc is below it)
-        LREG a2, code_seg_siz(a0)       // a2 = code segment size
-        bgeu a1, a2, fast_Sbootrap      // outside the test code — use the S framework handler
-        LREG a2, rvmodel_sv_off+3*REGWIDTH(a0)  // restore caller's a2
         LREG a1, rvmodel_sv_off+2*REGWIDTH(a0)  // restore caller's a1
         csrrw a0, CSR_SSCRATCH, a0      // restore sscratch = save ptr; a0 = caller's a0
 fast_Sillegalinstruction:
@@ -2722,8 +2770,6 @@ fast_Sdone:
                                         // is itself an illegal instruction and re-enters this
                                         // handler forever
 
-fast_Sbootrap:
-        LREG a2, rvmodel_sv_off+3*REGWIDTH(a0)  // restore caller's a2, then fall through
 fast_Sothertrap:
         LREG a1, rvmodel_sv_off+2*REGWIDTH(a0)  // restore caller's a1
         csrrw a0, CSR_SSCRATCH, a0      // restore sscratch = save ptr; a0 = caller's a0

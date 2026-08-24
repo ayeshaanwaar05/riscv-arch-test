@@ -198,4 +198,12 @@
 
 #define RVMODEL_CLR_SSW_INT(_R1, _R2)
 
+##### Sscofpmf #####
+
+#define RVMODEL_MHPMEVENT   mhpmevent3
+#define RVMODEL_MHPMCOUNTER mhpmcounter3
+#define RVMODEL_MHPMEVENT_VAL 0x000000    //will be updated once there is a way to increment counters. Spike Issue : https://github.com/riscv-software-src/riscv-isa-sim/issues/2370
+#define RVMODEL_MHPMEVENT_CODE 0x000000
+
+
 #endif // _RVMODEL_MACROS_H

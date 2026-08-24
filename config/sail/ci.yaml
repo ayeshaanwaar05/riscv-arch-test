@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 # Jordan Carlin jcarlin@hmc.edu April 2026
 # CI configuration for Sail reference model
-
+# Sscofpmf will be added back in CI once this issue gets resolved https://github.com/riscv/sail-riscv/issues/1733
 ci_enabled: true
-exclude_extensions: "SdtrigSm,SdtrigS,SdtrigU"
+exclude_extensions: "SdtrigSm,SdtrigS,SdtrigU,SscofpmfSm,SscofpmfS,SscofpmfU"
 shards: 1
 config_shards:
   sail-RVA22S64-optional: 2
