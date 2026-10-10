@@ -91,7 +91,7 @@ def _generate_lcofi_sip_u_tests(test_data: TestData) -> list[str]:
 
 @add_priv_test_generator(
     "SscofpmfU",
-    required_extensions=["U", "Sscofpmf"],
+    required_extensions=["Sscofpmf"],
 )
 def make_sscofpmfu(test_data: TestData) -> list[TestChunk]:
     """Generate tests for the SscofpmfU performance-counter-overflow testsuite."""

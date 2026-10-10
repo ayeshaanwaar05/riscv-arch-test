@@ -169,6 +169,14 @@
     #error "RVMODEL_HPM_COUNTER must be an HPM counter index from 3 to 31."
   #endif
 
+  // UDB defines UDB_HPM_COUNTER<n>_WIDTH only for implemented counters, and #if reads an undefined
+  // name as 0. RVMODEL_HPM_COUNTER is pasted into that name, so it must be a plain number.
+  #define RVTEST_HPM_WIDTH_(n) UDB_HPM_COUNTER##n##_WIDTH
+  #define RVTEST_HPM_WIDTH(n)  RVTEST_HPM_WIDTH_(n)
+  #if RVTEST_HPM_WIDTH(RVMODEL_HPM_COUNTER) == 0
+    #error "RVMODEL_HPM_COUNTER names an HPM counter that is not implemented (HPM_COUNTER_EN) or has width 0."
+  #endif
+
   // CSRs of the HPM counter selected by RVMODEL_HPM_COUNTER. The high halves exist only on RV32.
   #define RVTEST_CSR_MHPMEVENT    (CSR_MHPMEVENT3 + RVMODEL_HPM_COUNTER - 3)
   #define RVTEST_CSR_MHPMCOUNTER  (CSR_MHPMCOUNTER3 + RVMODEL_HPM_COUNTER - 3)

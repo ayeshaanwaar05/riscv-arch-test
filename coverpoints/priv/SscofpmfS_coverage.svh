@@ -71,22 +71,21 @@ covergroup SscofpmfS_cg with function sample(ins_t ins);
         wildcard bins read_only = {CSRRS} iff (ins.current.rs1_val ==  0);
     }
 
-    // The S-mode tests keep M-mode counting inhibited so the T-SBI trap handler never counts.
-    // These are the inhibit patterns in which S-mode still counts.
+    // M-mode counting stays inhibited so the T-SBI trap handler never counts
     `ifdef UDB_MXLEN_64
-        mhpmevent_s_counts_pattern_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, "mhpmevent3", "mhpmevent3")[62:58]) {
+        mhpmevent_s_counts_pattern_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, `SSCOFPMF_MHPMEVENT, `SSCOFPMF_MHPMEVENT)[62:58]) {
                 bins minh_only = {5'b10000};
                 bins minh_uinh = {5'b10100};
         }
-        mhpmevent_minh_only_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, "mhpmevent3", "mhpmevent3")[62:58] == 5'b10000) {
+        mhpmevent_minh_only_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, `SSCOFPMF_MHPMEVENT, `SSCOFPMF_MHPMEVENT)[62:58] == 5'b10000) {
                 bins yes = {1};
         }
     `else
-        mhpmevent_s_counts_pattern_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, "mhpmevent3h", "mhpmevent3h")[30:26]) {
+        mhpmevent_s_counts_pattern_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, `SSCOFPMF_MHPMEVENTH, `SSCOFPMF_MHPMEVENTH)[30:26]) {
                 bins minh_only = {5'b10000};
                 bins minh_uinh = {5'b10100};
         }
-        mhpmevent_minh_only_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, "mhpmevent3h", "mhpmevent3h")[30:26] == 5'b10000) {
+        mhpmevent_minh_only_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, `SSCOFPMF_MHPMEVENTH, `SSCOFPMF_MHPMEVENTH)[30:26] == 5'b10000) {
                 bins yes = {1};
         }
     `endif

@@ -211,7 +211,7 @@ def _generate_lcofip_priority_s_tests(test_data: TestData) -> list[str]:
 
 @add_priv_test_generator(
     "SscofpmfS",
-    required_extensions=["S", "Sscofpmf"],
+    required_extensions=["Sscofpmf"],
     march_extensions=[],
     extra_defines=["#define BOOT_TO_SMODE"],
 )

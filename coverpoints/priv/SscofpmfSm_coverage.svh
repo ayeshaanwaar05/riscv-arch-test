@@ -43,11 +43,11 @@ covergroup SscofpmfSm_cg with function sample(ins_t ins);
     }
 
     `ifdef UDB_MXLEN_64
-        mhpmevent_inhibits_zero_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, "mhpmevent3", "mhpmevent3")[62:58] == 5'b00000) {
+        mhpmevent_inhibits_zero_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, `SSCOFPMF_MHPMEVENT, `SSCOFPMF_MHPMEVENT)[62:58] == 5'b00000) {
                 bins yes = {1};
         }
     `else
-        mhpmevent_inhibits_zero_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, "mhpmevent3h", "mhpmevent3h")[30:26] == 5'b00000) {
+        mhpmevent_inhibits_zero_state: coverpoint (get_csr_val(ins.hart, ins.issue, `SAMPLE_AFTER, `SSCOFPMF_MHPMEVENTH, `SSCOFPMF_MHPMEVENTH)[30:26] == 5'b00000) {
                 bins yes = {1};
         }
     `endif

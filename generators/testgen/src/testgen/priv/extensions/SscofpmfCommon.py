@@ -76,11 +76,17 @@ HIGHER_MODE_PATTERN = {mode: bits >> 58 for mode, bits in HIGHER_MODE_INHIBITS.i
 EVENT_VAL_HI = "(((RVMODEL_MHPMEVENT_VAL) >> 32) & 0xFFFFFF)"
 
 
-def counted_since_all_ones(reg: int) -> list[str]:
-    """Reduce x{reg}, a counter read after it was preset to all 1s, to 1 if it counted at
-    least one event and 0 if it did not. The count itself is implementation-specific."""
+def read_counter_preset(r_preset: int, priv_mode: str) -> list[str]:
+    """Read back the counter just preset to all 1s: only its implemented bits are set."""
     return [
-        f"addi x{reg}, x{reg}, 1            # x{reg} = val + 1 (0 iff val is still all 1s)",
+        csr_access(f"csrr x{r_preset}, RVTEST_CSR_MHPMCOUNTER   # preset as read back", priv_mode),
+    ]
+
+
+def counted_since_preset(reg: int, r_preset: int) -> list[str]:
+    """Reduce x{reg} to 1 if the counter moved off the preset in x{r_preset}, else 0."""
+    return [
+        f"xor x{reg}, x{reg}, x{r_preset}   # 0 iff the counter still holds the preset",
         f"snez x{reg}, x{reg}               # x{reg} = counted at least one event",
     ]
 
@@ -282,19 +288,19 @@ def _generate_of_set_on_overflow_tests(test_data: TestData, priv_mode: str) -> l
     coverpoint = "cp_of_set_on_overflow"
     ######################################
 
-    r_val, r_temp, r_lcofip, r_addr, r_bool, r_hval = test_data.int_regs.get_registers(6, exclude_regs=[0, 31])
+    r_val, r_temp, r_lcofip, r_addr, r_hval, r_preset = test_data.int_regs.get_registers(6, exclude_regs=[0, 31])
 
     def read_event_config_bits() -> list[str]:
         """Read OF and the 5-bit inhibit field into x{r_temp}, masked to those bits."""
         return [
             "#if __riscv_xlen == 32",
             csr_access(f"csrr x{r_temp}, RVTEST_CSR_MHPMEVENTH   # sample point for mhpmevent_of", priv_mode),
-            f"LI(x{r_bool}, 0xFC000000)   # keep only OF + the 5-bit inhibit field (bits 31:26)",
-            f"and x{r_temp}, x{r_temp}, x{r_bool}",
+            f"srli x{r_temp}, x{r_temp}, 26   # keep only OF + the 5-bit inhibit field (bits 31:26)",
+            f"slli x{r_temp}, x{r_temp}, 26",
             "#else",
             csr_access(f"csrr x{r_temp}, RVTEST_CSR_MHPMEVENT   # sample point for mhpmevent_of", priv_mode),
-            f"LI(x{r_bool}, 0xFC00000000000000)   # keep only OF + the 5-bit inhibit field (bits 63:58)",
-            f"and x{r_temp}, x{r_temp}, x{r_bool}",
+            f"srli x{r_temp}, x{r_temp}, 58   # keep only OF + the 5-bit inhibit field (bits 63:58)",
+            f"slli x{r_temp}, x{r_temp}, 58",
             "#endif",
         ]
 
@@ -346,6 +352,7 @@ def _generate_of_set_on_overflow_tests(test_data: TestData, priv_mode: str) -> l
                 [
                     *write_event_pattern(r_val, r_hval, inhibit_pattern, priv_mode),
                     *write_counter_all_ones(r_temp, priv_mode),
+                    *read_counter_preset(r_preset, priv_mode),
                     "",
                     f"LA(x{r_addr}, scratch)",
                     "# One counted event is enough to wrap the all-1s counter and set OF",
@@ -354,8 +361,8 @@ def _generate_of_set_on_overflow_tests(test_data: TestData, priv_mode: str) -> l
                     test_data.add_testcase(binname, coverpoint, covergroup),
                     *read_event_config_bits(),
                     write_sigupd(r_temp, test_data),
-                    f"csrr x{r_temp}, RVTEST_CSR_MHPMCOUNTER   # sample point: did the counter move off all 1s?",
-                    *counted_since_all_ones(r_temp),
+                    f"csrr x{r_temp}, RVTEST_CSR_MHPMCOUNTER   # sample point: did the counter move off the preset?",
+                    *counted_since_preset(r_temp, r_preset),
                     write_sigupd(r_temp, test_data),
                     "",
                     f"RVTEST_IDLE_FOR_INTERRUPT(x{r_temp})   # wait for RVMODEL_INTERRUPT_LATENCY",
@@ -366,7 +373,7 @@ def _generate_of_set_on_overflow_tests(test_data: TestData, priv_mode: str) -> l
 
         else:
             mhpmcounter_read = (
-                f"csrr x{r_temp}, RVTEST_CSR_MHPMCOUNTER   # sample point: did the counter move off all 1s?"
+                f"csrr x{r_temp}, RVTEST_CSR_MHPMCOUNTER   # sample point: did the counter move off the preset?"
             )
 
             lines.extend(
@@ -375,6 +382,7 @@ def _generate_of_set_on_overflow_tests(test_data: TestData, priv_mode: str) -> l
                     test_data.add_testcase(binname, coverpoint, covergroup),
                     *write_event_pattern(r_val, r_hval, inhibit_pattern, priv_mode),
                     *write_counter_all_ones(r_temp, priv_mode),
+                    *read_counter_preset(r_preset, priv_mode),
                     "",
                     f"LA(x{r_addr}, scratch)",
                     "# One counted event is enough to wrap the all-1s counter and set OF",
@@ -383,7 +391,7 @@ def _generate_of_set_on_overflow_tests(test_data: TestData, priv_mode: str) -> l
                     *read_event_config_bits(),
                     write_sigupd(r_temp, test_data),
                     csr_access(mhpmcounter_read, priv_mode),
-                    *counted_since_all_ones(r_temp),
+                    *counted_since_preset(r_temp, r_preset),
                     write_sigupd(r_temp, test_data),
                     "",
                     f"RVTEST_IDLE_FOR_INTERRUPT(x{r_temp})   # wait for RVMODEL_INTERRUPT_LATENCY",
@@ -436,6 +444,7 @@ def _generate_of_set_on_overflow_tests(test_data: TestData, priv_mode: str) -> l
             csr_access(f"csrw RVTEST_CSR_MHPMEVENT, x{r_val}", priv_mode),
             "#endif",
             *write_counter_all_ones(r_temp, priv_mode),
+            *read_counter_preset(r_preset, priv_mode),
             *clear_lcofip(r_temp, priv_mode),
             "",
             f"LA(x{r_addr}, scratch)",
@@ -448,9 +457,10 @@ def _generate_of_set_on_overflow_tests(test_data: TestData, priv_mode: str) -> l
             *read_event_config_bits(),
             write_sigupd(r_temp, test_data),
             csr_access(
-                f"csrr x{r_temp}, RVTEST_CSR_MHPMCOUNTER   # sample point: did the counter move off all 1s?", priv_mode
+                f"csrr x{r_temp}, RVTEST_CSR_MHPMCOUNTER   # sample point: did the counter move off the preset?",
+                priv_mode,
             ),
-            *counted_since_all_ones(r_temp),
+            *counted_since_preset(r_temp, r_preset),
             write_sigupd(r_temp, test_data),
             *lcofip_read,
             f"srli x{r_lcofip}, x{r_lcofip}, 13",
@@ -459,7 +469,7 @@ def _generate_of_set_on_overflow_tests(test_data: TestData, priv_mode: str) -> l
         ]
     )
 
-    test_data.int_regs.return_registers([r_val, r_temp, r_lcofip, r_addr, r_bool, r_hval])
+    test_data.int_regs.return_registers([r_val, r_temp, r_lcofip, r_addr, r_hval, r_preset])
 
     return lines
 
